@@ -24,6 +24,11 @@ PRESENT_METHOD = {
   "rate": "rate",
   "horizon": "horizon"
 }
+
+@app.route("/api/test", methods=["GET"])
+def test_route():
+    return jsonify({"message": "Test successful!"})
+
 @app.route("/api/final_balance", methods=["POST"])
 def get_final_balance():
     json_data = request.get_json()
