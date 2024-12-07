@@ -92,17 +92,18 @@ class InvestmentCalculator:
         """initial balance"""
         return self._init_balance
 
-    def _calculate_monthly_return(self) -> float:
+    def _calculate_monthly_return(self,
+                                  annual_return: float = None) -> float:
         """Calculate the monthly return of an expected yearly return."""
         if self._method == "geometric":
-            return pow(1 + self.y_return, 1 / 12) - 1
+            return pow(1 + self.y_return, 1 / 12) - 1 if annual_return is None else pow(1 + annual_return, 1 / 12) - 1
         elif self._method == "arithmetic":
-            return self.y_return / 12
+            return self.y_return / 12 if annual_return is None else annual_return / 12
 
     def automatic_investment(self,
                              horizon: float = None,
                              m_investment: float = None,
-                             monthly_rate: float = None) -> InvestmentResult:
+                             annual_rate: float = None) -> InvestmentResult:
         """
         Calculate the final balance with optional periodic investment increment.
 
@@ -126,9 +127,11 @@ class InvestmentCalculator:
         """
 
         """计算投资期数以及设置当前月投资额和期望收益率"""
+        monthly_rate = self.__monthly_return \
+            if annual_rate is None else self._calculate_monthly_return(annual_return=annual_rate)  # 判断是否有传入年化收益率
         month_num = self.horizon * 12 if horizon is None else horizon * 12
         current_monthly_investment = self.m_investment if m_investment is None else m_investment
-        excepted_return = self.__monthly_return if monthly_rate is None else monthly_rate
+        excepted_return = monthly_rate
 
         """initial data array"""
         """第一个元素为初始值，后续元素开始依次为投资一个月，两个月，三个月……时的月初时候的数值"""
@@ -159,7 +162,7 @@ class InvestmentCalculator:
 
         """Create monthly data"""
         dates = date_range(
-            start= Timestamp.now().to_period("M").to_timestamp(),
+            start=Timestamp.now().to_period("M").to_timestamp(),
             periods=month_num + 1,
             freq='ME'
         )
@@ -255,7 +258,7 @@ class InvestmentCalculator:
 
         elif target == "horizon":
             # Calculate required investment horizon using logarithm formula
-            if target_value <= initial_balance: # 如果目标值小于初始值，直接返回0
+            if target_value <= initial_balance:  # 如果目标值小于初始值，直接返回0
                 return 0  # 已达到目标
             # Calculate number of months using the derived formula
             if self.__monthly_return == 0:
@@ -276,9 +279,9 @@ if __name__ == "__main__":
     try:
         # 创建计算器实例：10%年收益率，5年投资期，每月投资1000元
         calc = InvestmentCalculator(
-            y_return=0.02,  # 10% 年收益率
-            horizon=10,  # 5年投资期
-            m_investment=2,  # 每月投资1000元
+            y_return=34.71,  # 10% 年收益率
+            horizon=1,  # 5年投资期
+            m_investment=10,  # 每月投资1000元
             init_balance=0,  # 初始余额0元
             method="geometric",  # 使用几何平均值计算月收益率
             increment=0,  # 每年增加100元投资
@@ -312,6 +315,8 @@ if __name__ == "__main__":
         required_horizon = calc.back_to_present("horizon", target_value)
         print(f"Reaching the {target_value} target with {calc.m_investment} monthly investment, "
               f"required investment horizon: {required_horizon} years")
+
+
 
     except ValueError as e:
         print(f"Error: {e}")
