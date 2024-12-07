@@ -1,10 +1,11 @@
-from numpy import zeros, array, ndarray
+from numpy import zeros, ndarray
 from numpy import round as np_round
 from dataclasses import dataclass
 from pandas import date_range, DataFrame, Timestamp
 import math
-from typing import Literal, Dict, Optional
-from matplotlib import pyplot as plt
+from typing import Literal, Dict
+# taku only
+# from matplotlib import pyplot as plt
 
 
 @dataclass
@@ -292,7 +293,8 @@ if __name__ == "__main__":
 
         # 画图
         final_result.monthly_data.plot(x="Date", y=["Principal", "Return", "Balance"])
-        plt.show()
+        # taku only
+        # plt.show()
 
         # 计算达到目标所需的每月投资额
         target_value = 1000
