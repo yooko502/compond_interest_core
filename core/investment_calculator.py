@@ -180,7 +180,7 @@ class InvestmentCalculator:
 
     def back_to_present(self,
                         target: Literal["amount", "rate", "horizon"],
-                        value_target: float,
+                        target_value: float,
                         initial: float = None) -> float | ndarray:
         """
         Calculate either required monthly investment or required monthly return
@@ -195,12 +195,12 @@ class InvestmentCalculator:
 
         Returns:
             float: Required monthly investment or monthly return rate
-            :param value_target: 目标金额
+            :param target_value: 目标金额
             :param target: 所求目标类型，amount为每月投资额，rate为年化收益率，horizon为投资期限
             :param initial: 初始值
         """
         #  TODO: 增加其他数值的传入，让用户可以传入其他数值而不用修改类的属性值。
-        if value_target <= 0:
+        if target_value <= 0:
             raise ValueError("Target value must be positive")
 
         month_num = self.horizon * 12
@@ -208,15 +208,15 @@ class InvestmentCalculator:
 
         if target == "amount":
             # Calculate required monthly investment
-            if value_target <= initial_balance:
+            if target_value <= initial_balance:
                 return 0  # 已达到目标,无需投资
             # 等比数列求和
             if self.__monthly_return == 0:
                 # Special case for 0% return
-                amount = (value_target - initial_balance) / month_num
+                amount = (target_value - initial_balance) / month_num
                 return math.ceil(amount)
             else:
-                numerator = (value_target - initial_balance * pow(1 + self.__monthly_return, month_num))
+                numerator = (target_value - initial_balance * pow(1 + self.__monthly_return, month_num))
                 denominator = (pow(1 + self.__monthly_return, month_num) - 1) / self.__monthly_return
                 amount = numerator / denominator
                 return math.ceil(amount)
@@ -224,7 +224,7 @@ class InvestmentCalculator:
         elif target == "rate":
             # Calculate required monthly return rate using numerical method
             from scipy.optimize import fsolve
-            if value_target <= initial_balance + self.m_investment * month_num:
+            if target_value <= initial_balance + self.m_investment * month_num:
                 return 0
 
             tolerance = 1e-6  # 设定精度，用于判断是否达到目标值
@@ -254,14 +254,14 @@ class InvestmentCalculator:
 
         elif target == "horizon":
             # Calculate required investment horizon using logarithm formula
-            if value_target <= initial_balance: # 如果目标值小于初始值，直接返回0
+            if target_value <= initial_balance: # 如果目标值小于初始值，直接返回0
                 return 0  # 已达到目标
             # Calculate number of months using the derived formula
             if self.__monthly_return == 0:
                 # Special case for 0% return
-                months = (value_target - initial_balance) / self.m_investment
+                months = (target_value - initial_balance) / self.m_investment
             else:
-                numerator = value_target + self.m_investment / self.__monthly_return
+                numerator = target_value + self.m_investment / self.__monthly_return
                 denominator = initial_balance + self.m_investment / self.__monthly_return
                 months = math.log(numerator / denominator) / math.log(1 + self.__monthly_return)
 
