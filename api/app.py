@@ -5,7 +5,7 @@ from flask import Flask, json, jsonify, request
 from core.investment_calculator import InvestmentCalculator
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": ["https://compond-interest.vercel.app", "http://localhost:3000"]}})
 
 
 # 配置日志
