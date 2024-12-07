@@ -100,7 +100,7 @@ def get_back_to_present():
     if present_method == PRESENT_METHOD["rate"]:
         result = calc.back_to_present(present_method, target_amount)
         back_to_present = round(result, 2) * 100
-        data = calc.automatic_investment(monthly_rate=result)
+        data = calc.automatic_investment(annual_rate=result)
     
     if present_method == PRESENT_METHOD["horizon"]:
         back_to_present = calc.back_to_present(present_method, target_amount)
