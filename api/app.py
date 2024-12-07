@@ -1,11 +1,12 @@
 # api/index.py
 import logging
+import os
 from flask_cors import CORS
 from flask import Flask, json, jsonify, request
 from core.investment_calculator import InvestmentCalculator
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["https://compond-interest.vercel.app", "http://localhost:3000"]}})
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 # 配置日志
@@ -118,4 +119,5 @@ def get_back_to_present():
     return responese
 
 if __name__ == "__main__":
-    app()
+    port = int(os.environ.get('PORT', 8000))
+    app.run(host='0.0.0.0', port=port)
