@@ -1,9 +1,10 @@
-import numpy as np
+from numpy import zeros, array, ndarray
+from numpy import round as np_round
 from dataclasses import dataclass
-import pandas as pd
+from pandas import date_range, DataFrame, Timestamp
 import math
 from typing import Literal, Dict, Optional
-# from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 
 
 @dataclass
@@ -12,7 +13,7 @@ class InvestmentResult:
     final_balance: float | int
     total_principal: float | int
     total_return: float | int
-    monthly_data: pd.DataFrame
+    monthly_data: DataFrame
 
 
 def _validate_inputs(params: Dict) -> None:
@@ -130,10 +131,10 @@ class InvestmentCalculator:
 
         """initial data array"""
         """第一个元素为初始值，后续元素开始依次为投资一个月，两个月，三个月……时的月初时候的数值"""
-        balances = np.zeros(month_num + 1)  # 账户余额
-        principals = np.zeros(month_num + 1)  # 投入本金
-        returns = np.zeros(month_num + 1)  # 投资收益
-        investment_amount = np.zeros(month_num + 1)  # 投资额
+        balances = zeros(month_num + 1)  # 账户余额
+        principals = zeros(month_num + 1)  # 投入本金
+        returns = zeros(month_num + 1)  # 投资收益
+        investment_amount = zeros(month_num + 1)  # 投资额
 
         """setting initial value"""
         """初始余额设置为0的情况下，会默认为每月定投额"""
@@ -156,18 +157,18 @@ class InvestmentCalculator:
             investment_amount[i + 1] = current_monthly_investment
 
         """Create monthly data"""
-        dates = pd.date_range(
-            start=pd.Timestamp.now().to_period("M").to_timestamp(),
+        dates = date_range(
+            start= Timestamp.now().to_period("M").to_timestamp(),
             periods=month_num + 1,
             freq='ME'
         )
 
-        monthly_data = pd.DataFrame({
+        monthly_data = DataFrame({
             "Date": dates,
-            "Principal": np.round(principals).astype(int),  # 直接转换为整数
-            "Return": np.round(returns).astype(int),
-            "Balance": np.round(balances).astype(int),
-            "Investment": np.round(investment_amount).astype(int)
+            "Principal": np_round(principals).astype(int),  # 直接转换为整数
+            "Return": np_round(returns).astype(int),
+            "Balance": np_round(balances).astype(int),
+            "Investment": np_round(investment_amount).astype(int)
         })
 
         return InvestmentResult(
@@ -180,11 +181,13 @@ class InvestmentCalculator:
     def back_to_present(self,
                         target: Literal["amount", "rate", "horizon"],
                         value_target: float,
-                        initial: float = None) -> float | np.ndarray:
+                        initial: float = None) -> float | ndarray:
         """
         Calculate either required monthly investment or required monthly return
         to reach a target value.
         除了计算出的收益率之外，其余回传的所有结果会向上取整
+        除了要传入的数值之外，其余的数值都会使用类中的属性值，如果需要传入其他数值，需要更改类的属性值。
+
         Parameters:
             target (str): "num" for monthly investment or "rate" for required return
             or "horizon" for required investment horizon.
@@ -192,7 +195,11 @@ class InvestmentCalculator:
 
         Returns:
             float: Required monthly investment or monthly return rate
+            :param value_target: 目标金额
+            :param target: 所求目标类型，amount为每月投资额，rate为年化收益率，horizon为投资期限
+            :param initial: 初始值
         """
+        #  TODO: 增加其他数值的传入，让用户可以传入其他数值而不用修改类的属性值。
         if value_target <= 0:
             raise ValueError("Target value must be positive")
 
@@ -219,19 +226,31 @@ class InvestmentCalculator:
             from scipy.optimize import fsolve
             if value_target <= initial_balance + self.m_investment * month_num:
                 return 0
-            def objective(r):
-                if abs(r) < 1e-10:  # 处理接近0的情况
-                    return initial_balance + self.m_investment * month_num - value_target
+
+            tolerance = 1e-6  # 设定精度，用于判断是否达到目标值
+            left, right = -0.99, 10.0  # 设定二分法的左右边界
+
+            def calc_final_value(r):
+                if abs(r) < 1e-10:
+                    return initial_balance + self.m_investment * month_num
+                return (initial_balance * pow(1 + r, month_num) +
+                        self.m_investment * (pow(1 + r, month_num) - 1) / r)
+
+            while right - left > tolerance:
+                mid = (left + right) / 2
+                final_value = calc_final_value(mid)
+
+                if (final_value - target_value < tolerance) and final_value >= target_value:
+                    return mid
+                elif final_value < target_value:
+                    left = mid
                 else:
-                    # 使用准确的公式而不是循环
-                    return (initial_balance * pow(1 + r, month_num) +
-                            self.m_investment * (pow(1 + r, month_num) - 1) / r) - value_target
+                    right = mid
 
-            # 使用一个合理的初始猜测值
-            initial_guess = 0.01  # 1%月回报率作为初始猜测
-            monthly_rate = fsolve(objective, x0=initial_guess)[0]
+            monthly = (left + right) / 2
+            annual = pow(1 + monthly, 12) - 1
 
-            return monthly_rate
+            return annual
 
         elif target == "horizon":
             # Calculate required investment horizon using logarithm formula
@@ -279,7 +298,7 @@ if __name__ == "__main__":
         target_value = 1000
         required_monthly = calc.back_to_present("amount", target_value)
         print(f"Required monthly investment to reach {target_value} "
-              f"with {calc.y_return} yearly return "
+              f"with {calc.y_return} monthly return "
               f"and {calc.init_balance} initial balance : {required_monthly:.2f}")
 
         # 计算达到目标所需的年化收益率
