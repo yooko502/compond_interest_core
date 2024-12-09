@@ -13,6 +13,6 @@ jobs:
     steps:
       - name: Call API
         run: |
-          curl -X POST \
+          curl -X GET \
                -H "Content-Type: application/json" \
                https://compond-interest-core.onrender.com/api/test
