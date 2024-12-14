@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pandas import date_range, DataFrame, Timestamp
 import math
 from typing import Literal, Dict
+
+
 # taku only
 # from matplotlib import pyplot as plt
 
@@ -228,11 +230,13 @@ class InvestmentCalculator:
         elif target == "rate":
             # Calculate required monthly return rate using numerical method
             from scipy.optimize import fsolve
-            if target_value <= initial_balance + self.m_investment * month_num:
+            if initial_balance == 0 and self.m_investment == 0:  # 检测投资额和初始资产不能同时为0
+                return 0
+            if target_value <= initial_balance + self.m_investment * month_num:  # 如果目标值小于初始值+总投资额，直接返回0
                 return 0
 
             tolerance = 1e-6  # 设定精度，用于判断是否达到目标值
-            left, right = -0.99, 10.0  # 设定二分法的左右边界
+            left, right = 0, 10.0  # 设定二分法的左右边界，因为要求预期收益率大于0，所以左边界为0（小于0时候没有投资的必要）
 
             def calc_final_value(r):
                 if abs(r) < 1e-10:
@@ -254,7 +258,7 @@ class InvestmentCalculator:
             monthly = (left + right) / 2
             annual = pow(1 + monthly, 12) - 1
 
-            return annual
+            return max(annual, 0)
 
         elif target == "horizon":
             # Calculate required investment horizon using logarithm formula
@@ -315,8 +319,6 @@ if __name__ == "__main__":
         required_horizon = calc.back_to_present("horizon", target_value)
         print(f"Reaching the {target_value} target with {calc.m_investment} monthly investment, "
               f"required investment horizon: {required_horizon} years")
-
-
 
     except ValueError as e:
         print(f"Error: {e}")
