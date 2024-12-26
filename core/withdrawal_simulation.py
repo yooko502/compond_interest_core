@@ -11,6 +11,7 @@ class WithdrawalResult:
     monthly_withdrawal: float | int  # 用于返回每月提取的金额
     initial_balance: float | int  # 用于返回所需的初始金额
     monthly_balances: pd.DataFrame  # 用于返回每月的资产变化
+    no_invest: float | int | tuple  # 用于各个方法之间，不投资的情况下的返回值
 
 
 class WithdrawalSimulation:
@@ -55,8 +56,13 @@ class WithdrawalSimulation:
         monthly_balances_df = pd.DataFrame(monthly_balances, columns=['Balance'])
         monthly_balances_df.index.name = 'Month'
 
+        no_invest = initial_balance / monthly_withdrawal  # 这个方法中计算的不投资的情况下可以持续的月数
+        no_invest_year = int(no_invest // 12)  # 获取年数
+        no_invest_month = int(no_invest % 12)  # 获取月数
+
         return WithdrawalResult(years=months / 12, monthly_withdrawal=monthly_withdrawal,
-                                initial_balance=initial_balance, monthly_balances=monthly_balances_df)
+                                initial_balance=initial_balance, monthly_balances=monthly_balances_df,
+                                no_invest=(no_invest_year, no_invest_month))  # 返回值中全部返回了可以持续的年数以及月数
 
     def simulate_monthly_withdrawal(self,
                                     initial_balance: float,
@@ -99,8 +105,10 @@ class WithdrawalSimulation:
         monthly_balances_df = pd.DataFrame(monthly_balances, columns=['Balance'])
         monthly_balances_df.index.name = 'Month'
 
+        no_invest = initial_balance / months
+
         return WithdrawalResult(years=years, monthly_withdrawal=monthly_withdrawal, initial_balance=initial_balance,
-                                monthly_balances=monthly_balances_df)
+                                monthly_balances=monthly_balances_df, no_invest=no_invest)
 
     def simulate_initial_balance(self,
                                  monthly_withdrawal: float,
@@ -141,8 +149,10 @@ class WithdrawalSimulation:
         monthly_balances_df = pd.DataFrame(monthly_balances, columns=['Balance'])
         monthly_balances_df.index.name = 'Month'
 
+        no_invest = months * monthly_withdrawal  # 这个方法中计算的不投资的情况下所需的初始金额
+
         return WithdrawalResult(years=years, monthly_withdrawal=monthly_withdrawal, initial_balance=initial_balance,
-                                monthly_balances=monthly_balances_df)
+                                monthly_balances=monthly_balances_df, no_invest=no_invest)
 
 
 # Example usage
@@ -153,13 +163,16 @@ if __name__ == "__main__":
     result = simulation.simulate_years(initial_balance=100000, monthly_withdrawal=1000)
     print(f"Years the investment will last: {result.years:.2f}")
     print(result.monthly_balances)
+    print(f"\n No invest: {result.no_invest[0]} years and {result.no_invest[1]} months")
 
     # Example 2: Calculate the monthly withdrawal amount
     result = simulation.simulate_monthly_withdrawal(initial_balance=100000, years=20)
     print(f"Monthly withdrawal amount: {result.monthly_withdrawal:.2f}")
     print(result.monthly_balances)
+    print(f"\n No invest: {result.no_invest:.2f}")
 
     # Example 3: Calculate the required initial balance
     result = simulation.simulate_initial_balance(monthly_withdrawal=1000, years=20)
     print(f"Required initial balance: {result.initial_balance:.2f}")
     print(result.monthly_balances)
+    print(f"\n No invest: {result.no_invest:.2f}")
