@@ -1,3 +1,5 @@
 .vercel
 venv
 market_analysis
+notebooks
+.idea
