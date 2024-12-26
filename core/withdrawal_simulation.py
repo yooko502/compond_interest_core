@@ -44,6 +44,8 @@ class WithdrawalSimulation:
         Returns:
             WithdrawalResult: Result including number of years and monthly balances
         """
+        if initial_balance <= 0 or monthly_withdrawal <= 0:
+            raise ValueError("Initial balance and monthly withdrawal must be greater than 0.")
         balance = initial_balance  # 初始的资产金额
         months = 0  # 用于记录持续的月数
         monthly_balances = []  # 用于记录每月的资产变化
@@ -78,6 +80,8 @@ class WithdrawalSimulation:
         Returns:
             WithdrawalResult: Result including monthly withdrawal amount and monthly balances
         """
+        if initial_balance <= 0 or years <= 0:
+            raise ValueError("Initial balance and years must be greater than 0.")
         months = int(years * 12)  # 将年数转换为月数
         balance = initial_balance
         monthly_balances = []
@@ -123,6 +127,8 @@ class WithdrawalSimulation:
         Returns:
             WithdrawalResult: Result including required initial balance and monthly balances
         """
+        if monthly_withdrawal <= 0 or years <= 0:
+            raise ValueError("Monthly withdrawal and years must be greater than 0.")
         months = int(years * 12)
         balance = 0
         monthly_balances = []
