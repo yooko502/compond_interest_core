@@ -7,11 +7,11 @@ import pandas as pd
 @dataclass
 class WithdrawalResult:
     """Withdrawal result dataclass"""
-    years: float | int  # 用于返回可以持续的年数
+    years: float | int | tuple  # 用于返回可以持续的年数, tuple用于分别返回年数和月数
     monthly_withdrawal: float | int  # 用于返回每月提取的金额
     initial_balance: float | int  # 用于返回所需的初始金额
     monthly_balances: pd.DataFrame  # 用于返回每月的资产变化
-    no_invest: float | int | tuple  # 用于各个方法之间，不投资的情况下的返回值
+    no_invest: float | int | tuple  # 用于各个方法之间，不投资的情况下的返回值，tuple用于分别返回年数和月数
 
 
 class WithdrawalSimulation:
@@ -62,7 +62,7 @@ class WithdrawalSimulation:
         no_invest_year = int(no_invest // 12)  # 获取年数
         no_invest_month = int(no_invest % 12)  # 获取月数
 
-        return WithdrawalResult(years=months / 12, monthly_withdrawal=monthly_withdrawal,
+        return WithdrawalResult(years=(int(months // 12), int(months % 12)), monthly_withdrawal=monthly_withdrawal,
                                 initial_balance=initial_balance, monthly_balances=monthly_balances_df,
                                 no_invest=(no_invest_year, no_invest_month))  # 返回值中全部返回了可以持续的年数以及月数
 
@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
     # Example 1: Calculate how many years the investment will last
     result = simulation.simulate_years(initial_balance=100000, monthly_withdrawal=1000)
-    print(f"Years the investment will last: {result.years:.2f}")
+    print(f"Years the investment will last: {result.years[0]} years and {result.years[1]} months")
     print(result.monthly_balances)
     print(f"\n No invest: {result.no_invest[0]} years and {result.no_invest[1]} months")
 
