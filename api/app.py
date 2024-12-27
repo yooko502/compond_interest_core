@@ -1,9 +1,12 @@
 # api/index.py
+from http.client import responses
 import logging
 import os
 from flask_cors import CORS
-from flask import Flask, json, jsonify, request
+from flask import Flask, Response, json, jsonify, request
 import sys
+
+from core.withdrawal_simulation import WithdrawalSimulation
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -27,6 +30,12 @@ PRESENT_METHOD = {
     "amount": "amount",
     "rate": "rate",
     "horizon": "horizon"
+}
+
+WITHDRAWAL_TYPE = {
+    "initial_balance": "initial_balance",
+    "monthly_withdrawal": "monthly_withdrawal",
+    "years": "years"
 }
 
 
@@ -124,6 +133,35 @@ def get_back_to_present():
 
     return responese
 
+
+@app.route("/api/withdrawal_data", methods=["POST"])
+def get_withdrawal_data():
+    simulation_type = request.args.get("target")
+    json_data = request.get_json()
+    try:
+        simulation = WithdrawalSimulation(annual_return=json_data.get("annual_return"))
+        data = None
+        result = None
+        if simulation_type == WITHDRAWAL_TYPE["years"]:
+            data = simulation.simulate_years(json_data.get("initial_balance"), json_data.get("monthly_withdrawal"))
+
+        if simulation_type == WITHDRAWAL_TYPE["monthly_withdrawal"]:
+            data = simulation.simulate_monthly_withdrawal(json_data.get("initial_balance"), json_data.get("years"))
+
+        if simulation_type == WITHDRAWAL_TYPE["initial_balance"]:
+            data = simulation.simulate_initial_balance(json_data.get("monthly_withdrawal"), json_data.get("years"))
+
+        result = {
+            "invest_years": data.years,
+            "no_invest": data.no_invest,
+            "initial_balance": data.initial_balance,
+            "monthly_withdrawal": data.monthly_withdrawal,
+            "monthly_data": json.loads(data.monthly_balances.to_json(orient="records"))
+        }
+        responese = jsonify(result)
+    except Exception :
+        return Response(500)
+    return responese
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 10000))
