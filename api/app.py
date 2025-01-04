@@ -33,9 +33,9 @@ PRESENT_METHOD = {
 }
 
 WITHDRAWAL_TYPE = {
-    "initial_balance": "initial_balance",
-    "monthly_withdrawal": "monthly_withdrawal",
-    "years": "years"
+    "initial_balance": "initial_amount",
+    "monthly_withdrawal": "withdrawable_amount",
+    "years": "how_many_years"
 }
 
 
@@ -138,6 +138,7 @@ def get_back_to_present():
 def get_withdrawal_data():
     simulation_type = request.args.get("target")
     json_data = request.get_json()
+    logger.info(f"json_data:{json_data}")
     try:
         simulation = WithdrawalSimulation(annual_return=json_data.get("annual_return"))
         data = None
@@ -156,11 +157,11 @@ def get_withdrawal_data():
             "no_invest": data.no_invest,
             "initial_balance": data.initial_balance,
             "monthly_withdrawal": data.monthly_withdrawal,
-            "monthly_data": json.loads(data.monthly_balances.to_json(orient="records"))
+            "monthly_data": json.loads(data.monthly_balances.reset_index().to_json(orient="records"))
         }
         responese = jsonify(result)
     except Exception :
-        return Response(500)
+        return jsonify({"message": "have a error"})
     return responese
 
 if __name__ == "__main__":
