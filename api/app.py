@@ -6,10 +6,8 @@ from flask_cors import CORS
 from flask import Flask, Response, json, jsonify, request
 import sys
 
-from core.withdrawal_simulation import WithdrawalSimulation
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+from core.withdrawal_simulation import WithdrawalSimulation
 from core.investment_calculator import InvestmentCalculator
 
 app = Flask(__name__)
