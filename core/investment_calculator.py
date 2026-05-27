@@ -3,8 +3,7 @@ from numpy import round as np_round
 from dataclasses import dataclass
 from pandas import date_range, DataFrame, Timestamp
 import math
-from typing import Literal, Dict
-
+from typing import Literal
 
 # taku only
 # from matplotlib import pyplot as plt
@@ -13,27 +12,28 @@ from typing import Literal, Dict
 @dataclass
 class InvestmentResult:
     """investment result dataclass"""
+
     final_balance: float | int
     total_principal: float | int
     total_return: float | int
     monthly_data: DataFrame
 
 
-def _validate_inputs(params: Dict) -> None:
+def _validate_inputs(params: dict) -> None:
     """Validate input parameters."""
-    if params['y_return'] < 0:
+    if params["y_return"] < 0:
         raise ValueError("Yearly return rate cannot be less than 0")
-    if params['horizon'] <= 0:
+    if params["horizon"] <= 0:
         raise ValueError("Investment horizon must be positive")
-    if params['m_investment'] < 0:
+    if params["m_investment"] < 0:
         raise ValueError("Monthly investment cannot be negative")
-    if params['init_balance'] < 0:
+    if params["init_balance"] < 0:
         raise ValueError("Initial balance cannot be negative")
-    if params['method'] not in ["geometric", "arithmetic"]:
+    if params["method"] not in ["geometric", "arithmetic"]:
         raise ValueError("Method must be either 'geometric' or 'arithmetic'")
-    if not isinstance(params['increment'], (int, float)):
+    if not isinstance(params["increment"], (int, float)):
         raise ValueError("Increment amount must be a number")
-    if params['incre_period'] < 0:
+    if params["incre_period"] < 0:
         raise ValueError("Increment period cannot be negative")
 
 
@@ -51,13 +51,16 @@ class InvestmentCalculator:
         incre_period (int): Number of years to apply increment. Defaults to 0.
     """
 
-    def __init__(self, y_return: float = 0,
-                 horizon: int = 1,
-                 m_investment: float = 0,
-                 init_balance: float = 0,
-                 method: Literal["geometric", "arithmetic"] = "geometric",
-                 increment: float = 0,
-                 incre_period: int = 0):
+    def __init__(
+        self,
+        y_return: float = 0,
+        horizon: int = 1,
+        m_investment: float = 0,
+        init_balance: float = 0,
+        method: Literal["geometric", "arithmetic"] = "geometric",
+        increment: float = 0,
+        incre_period: int = 0,
+    ):
 
         # Input validation
         _validate_inputs(locals())
@@ -94,18 +97,23 @@ class InvestmentCalculator:
         """initial balance"""
         return self._init_balance
 
-    def _calculate_monthly_return(self,
-                                  annual_return: float = None) -> float:
+    def _calculate_monthly_return(self, annual_return: float | None = None) -> float:
         """Calculate the monthly return of an expected yearly return."""
         if self._method == "geometric":
-            return pow(1 + self.y_return, 1 / 12) - 1 if annual_return is None else pow(1 + annual_return, 1 / 12) - 1
-        elif self._method == "arithmetic":
+            return (
+                pow(1 + self.y_return, 1 / 12) - 1
+                if annual_return is None
+                else pow(1 + annual_return, 1 / 12) - 1
+            )
+        else:
             return self.y_return / 12 if annual_return is None else annual_return / 12
 
-    def automatic_investment(self,
-                             horizon: float = None,
-                             m_investment: float = None,
-                             annual_rate: float = None) -> InvestmentResult:
+    def automatic_investment(
+        self,
+        horizon: float | None = None,
+        m_investment: float | None = None,
+        annual_rate: float | None = None,
+    ) -> InvestmentResult:
         """
         Calculate the final balance with optional periodic investment increment.
 
@@ -129,10 +137,15 @@ class InvestmentCalculator:
         """
 
         """计算投资期数以及设置当前月投资额和期望收益率"""
-        monthly_rate = self.__monthly_return \
-            if annual_rate is None else self._calculate_monthly_return(annual_return=annual_rate)  # 判断是否有传入年化收益率
-        month_num = self.horizon * 12 if horizon is None else horizon * 12
-        current_monthly_investment = self.m_investment if m_investment is None else m_investment
+        monthly_rate = (
+            self.__monthly_return
+            if annual_rate is None
+            else self._calculate_monthly_return(annual_return=annual_rate)
+        )  # 判断是否有传入年化收益率
+        month_num = int(self.horizon * 12 if horizon is None else horizon * 12)
+        current_monthly_investment = (
+            self.m_investment if m_investment is None else m_investment
+        )
         excepted_return = monthly_rate
 
         """initial data array"""
@@ -152,12 +165,17 @@ class InvestmentCalculator:
             year_num = i // 12
 
             # Apply increment to monthly investment or not
-            if i % 12 == 0 and self._increment != 0 and \
-                    year_num <= self._increment_period and year_num != 0:
+            if (
+                i % 12 == 0
+                and self._increment != 0
+                and year_num <= self._increment_period
+                and year_num != 0
+            ):
                 current_monthly_investment += self._increment
 
-            balances[i + 1] = (balances[i] * (1 + excepted_return) +
-                               current_monthly_investment)
+            balances[i + 1] = (
+                balances[i] * (1 + excepted_return) + current_monthly_investment
+            )
             principals[i + 1] = principals[i] + current_monthly_investment
             returns[i + 1] = balances[i + 1] - principals[i + 1]
             investment_amount[i + 1] = current_monthly_investment
@@ -166,28 +184,32 @@ class InvestmentCalculator:
         dates = date_range(
             start=Timestamp.now().to_period("M").to_timestamp(),
             periods=month_num + 1,
-            freq='ME'
+            freq="ME",
         )
 
-        monthly_data = DataFrame({
-            "Date": dates,
-            "Principal": np_round(principals).astype(int),  # 直接转换为整数
-            "Return": np_round(returns).astype(int),
-            "Balance": np_round(balances).astype(int),
-            "Investment": np_round(investment_amount).astype(int)
-        })
+        monthly_data = DataFrame(
+            {
+                "Date": dates,
+                "Principal": np_round(principals).astype(int),  # 直接转换为整数
+                "Return": np_round(returns).astype(int),
+                "Balance": np_round(balances).astype(int),
+                "Investment": np_round(investment_amount).astype(int),
+            }
+        )
 
         return InvestmentResult(
             final_balance=round(balances[-1].item()),  # 对单个数值使用Python内置的round
             total_principal=round(principals[-1].item()),
             total_return=round(returns[-1].item()),
-            monthly_data=monthly_data
+            monthly_data=monthly_data,
         )
 
-    def back_to_present(self,
-                        target: Literal["amount", "rate", "horizon"],
-                        target_value: float,
-                        initial: float = None) -> float | ndarray:
+    def back_to_present(
+        self,
+        target: Literal["amount", "rate", "horizon"],
+        target_value: float,
+        initial: float | None = None,
+    ) -> float | ndarray:
         """
         Calculate either required monthly investment or required monthly return
         to reach a target value.
@@ -222,33 +244,49 @@ class InvestmentCalculator:
                 amount = (target_value - initial_balance) / month_num
                 return math.ceil(amount)
             else:
-                numerator = (target_value - initial_balance * pow(1 + self.__monthly_return, month_num))
-                denominator = (pow(1 + self.__monthly_return, month_num) - 1) / self.__monthly_return
+                numerator = target_value - initial_balance * pow(
+                    1 + self.__monthly_return, month_num
+                )
+                denominator = (
+                    pow(1 + self.__monthly_return, month_num) - 1
+                ) / self.__monthly_return
                 amount = numerator / denominator
                 return math.ceil(amount)
 
         elif target == "rate":
             # Calculate required monthly return rate using numerical method
             from scipy.optimize import fsolve
-            if initial_balance == 0 and self.m_investment == 0:  # 检测投资额和初始资产不能同时为0
+
+            if (
+                initial_balance == 0 and self.m_investment == 0
+            ):  # 检测投资额和初始资产不能同时为0
                 return 0
-            if target_value <= initial_balance + self.m_investment * month_num:  # 如果目标值小于初始值+总投资额，直接返回0
+            if (
+                target_value <= initial_balance + self.m_investment * month_num
+            ):  # 如果目标值小于初始值+总投资额，直接返回0
                 return 0
 
             tolerance = 1e-6  # 设定精度，用于判断是否达到目标值
-            left, right = 0, 10.0  # 设定二分法的左右边界，因为要求预期收益率大于0，所以左边界为0（小于0时候没有投资的必要）
+            left, right = (
+                0,
+                10.0,
+            )  # 设定二分法的左右边界，因为要求预期收益率大于0，所以左边界为0（小于0时候没有投资的必要）
 
             def calc_final_value(r):
                 if abs(r) < 1e-10:
                     return initial_balance + self.m_investment * month_num
-                return (initial_balance * pow(1 + r, month_num) +
-                        self.m_investment * (pow(1 + r, month_num) - 1) / r)
+                return (
+                    initial_balance * pow(1 + r, month_num)
+                    + self.m_investment * (pow(1 + r, month_num) - 1) / r
+                )
 
             while right - left > tolerance:
                 mid = (left + right) / 2
                 final_value = calc_final_value(mid)
 
-                if (final_value - target_value < tolerance) and final_value >= target_value:
+                if (
+                    final_value - target_value < tolerance
+                ) and final_value >= target_value:
                     return mid
                 elif final_value < target_value:
                     left = mid
@@ -270,8 +308,12 @@ class InvestmentCalculator:
                 months = (target_value - initial_balance) / self.m_investment
             else:
                 numerator = target_value + self.m_investment / self.__monthly_return
-                denominator = initial_balance + self.m_investment / self.__monthly_return
-                months = math.log(numerator / denominator) / math.log(1 + self.__monthly_return)
+                denominator = (
+                    initial_balance + self.m_investment / self.__monthly_return
+                )
+                months = math.log(numerator / denominator) / math.log(
+                    1 + self.__monthly_return
+                )
 
             # Convert months to years, ensure non-negative and ceiling to next integer
             years = math.ceil(max(0, months / 12))
@@ -289,36 +331,44 @@ if __name__ == "__main__":
             init_balance=0,  # 初始余额0元
             method="geometric",  # 使用几何平均值计算月收益率
             increment=0,  # 每年增加100元投资
-            incre_period=0  # 持续3年增
+            incre_period=0,  # 持续3年增
         )
 
         # 计算最终余额
         final_result = calc.automatic_investment()
-        print(f"Final balance after {calc.horizon} years: {final_result.final_balance:.2f}")
+        print(
+            f"Final balance after {calc.horizon} years: {final_result.final_balance:.2f}"
+        )
         print(f"Total principal invested: {final_result.total_principal:.2f}")
         print(f"Total return: {final_result.total_return:.2f}")
 
         # 画图
-        final_result.monthly_data.plot(x="Date", y=["Principal", "Return", "Balance"])
+        # final_result.monthly_data.plot(x="Date", y=["Principal", "Return", "Balance"])
         # taku only
         # plt.show()
 
         # 计算达到目标所需的每月投资额
         target_value = 1000
         required_monthly = calc.back_to_present("amount", target_value)
-        print(f"Required monthly investment to reach {target_value} "
-              f"with {calc.y_return} monthly return "
-              f"and {calc.init_balance} initial balance : {required_monthly:.2f}")
+        print(
+            f"Required monthly investment to reach {target_value} "
+            f"with {calc.y_return} monthly return "
+            f"and {calc.init_balance} initial balance : {required_monthly:.2f}"
+        )
 
         # 计算达到目标所需的年化收益率
         required_return = calc.back_to_present("rate", target_value)
-        print(f"Reaching the {target_value} target with {calc.m_investment} monthly investment, "
-              f"required yearly return rate: {required_return:.4%}")
+        print(
+            f"Reaching the {target_value} target with {calc.m_investment} monthly investment, "
+            f"required yearly return rate: {required_return:.4%}"
+        )
 
         # 计算达到目标所需的投资期限
         required_horizon = calc.back_to_present("horizon", target_value)
-        print(f"Reaching the {target_value} target with {calc.m_investment} monthly investment, "
-              f"required investment horizon: {required_horizon} years")
+        print(
+            f"Reaching the {target_value} target with {calc.m_investment} monthly investment, "
+            f"required investment horizon: {required_horizon} years"
+        )
 
     except ValueError as e:
         print(f"Error: {e}")
