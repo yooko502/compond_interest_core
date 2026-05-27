@@ -1,0 +1,9 @@
+flask==3.0.3
+flask-cors==5.0.0
+# matplotlib~=3.9.3
+scipy~=1.14.1 # 科学计算，进行数值计算
+# matplotlib~=3.9.3 # 画图
+# yfinance~=0.2.50 # 获取股票数据
+numpy>=2.0.0
+pandas>=2.2.2
+python-dateutil>=2.9.0.post0
