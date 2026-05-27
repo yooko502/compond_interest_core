@@ -1,0 +1,14 @@
+[project]
+name = "compound-interest-backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11.2"
+dependencies = [
+    "flask==3.0.3",
+    "flask-cors==5.0.0",
+    "numpy>=2.0.0",
+    "pandas>=2.2.2",
+    "python-dateutil>=2.9.0.post0",
+    "scipy~=1.14.1",
+]

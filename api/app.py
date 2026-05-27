@@ -151,7 +151,7 @@ def get_withdrawal_data():
             data = simulation.simulate_initial_balance(json_data.get("monthly_withdrawal"), json_data.get("years"))
 
         result = {
-            "invest_years": data.years,
+            "invest_years": data.years if data.years is not None else "infinite",
             "no_invest": data.no_invest,
             "initial_balance": data.initial_balance,
             "monthly_withdrawal": data.monthly_withdrawal,
